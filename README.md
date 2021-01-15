@@ -6,7 +6,7 @@ Examples of mpi4py + exception handling.
 
 ### Example 1
 
-`ex1-unsafe.py` is an example of an mpi-optional implementation. The implementation essentially treats the single non-mpi process as an mpi process with `rank == 0` of `size == 1`. The program checks for `comm == None` to distinguish between mpi and non-mpi code paths.
+`ex1-unsafe.py` is an example use case implemented with typical mpi-optional pattern. The implementation essentially treats the single non-mpi process as an mpi process with `rank == 0` of `size == 1`. The program checks for `comm == None` to distinguish between mpi and non-mpi code paths.
 
 To run the non-mpi version:
 
@@ -90,7 +90,7 @@ The following shows what happens when we try `ex2-safe.py` with the `--trigger-o
 
 ### Example 3
 
-`ex3-mpi4dummies.py` is an example that uses the helper classes to achieve the same thing. The implementation is a bit cleaner and makes the pattern easy to reuse and extend.
+`ex3-mpi4dummies.py` is an example that uses a helper class to achieve to achieve the same effect. The implementation is a bit cleaner and makes the pattern easy to reuse and extend.
 
 ```
 > mpiexec -n 2 python ex3-mpi4dummies.py --trigger-one --mpi
