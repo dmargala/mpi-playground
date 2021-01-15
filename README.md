@@ -47,7 +47,7 @@ We can force an error to occur while generating data during the second iteration
 0: Hello!
 0: (0) subtotal = 45
 0: (0) total = 45
-0: skipping iteration 1: <class 'RuntimeError'> 0: error generating data!
+0: (1) skipping -> <class 'RuntimeError'> 0: error generating data!
 0: (2) subtotal = 435
 0: (2) total = 435
 ```
@@ -56,15 +56,15 @@ However, the mpi version gets stuck and needs a `CRTL-C` to abort:
 
 ```
 > mpiexec -n 2 python ex1-unsafe.py --trigger-one --mpi
-0: Hello!
 1: Hello!
+0: Hello!
 0: (0) subtotal = 20
 1: (0) subtotal = 25
 0: (0) total = 45
-0: skipping iteration 1: <class 'RuntimeError'> 0: error generating data!
+0: (1) skipping -> <class 'RuntimeError'> 0: error generating data!
+1: (1) subtotal = 225
 0: (2) subtotal = 210
 0: (2) total = 435
-1: (1) subtotal = 225
 ^C
 ```
 
@@ -80,12 +80,12 @@ The following shows what happens when we try `ex2-safe.py` with the `--trigger-o
 1: Hello!
 0: (0) subtotal = 20
 1: (0) subtotal = 25
-0: 45
-1: skipping iteration 1: <class 'RuntimeError'> 1: caught error before bcast!
-0: skipping iteration 1: <class 'RuntimeError'> 0: caught error before bcast!
+0: (0) total = 45
+0: (1) skipping -> <class 'RuntimeError'> 0: caught error before bcast!
+1: (1) skipping -> <class 'RuntimeError'> 1: caught error before bcast!
 0: (2) subtotal = 210
 1: (2) subtotal = 225
-0: 435
+0: (2) total = 435
 ```
 
 ### Example 3
@@ -99,8 +99,8 @@ The following shows what happens when we try `ex2-safe.py` with the `--trigger-o
 0: (0) subtotal = 20
 1: (0) subtotal = 25
 0: (0) total = 45
-0: skipping iteration 1: <class 'RuntimeError'> 0: caught error before bcast!
-1: skipping iteration 1: <class 'RuntimeError'> 1: caught error before bcast!
+0: (1) skipping -> <class 'RuntimeError'> 0: caught error before bcast!
+1: (1) skipping -> <class 'RuntimeError'> 1: caught error before bcast!
 0: (2) subtotal = 210
 1: (2) subtotal = 225
 0: (2) total = 435
