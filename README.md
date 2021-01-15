@@ -6,7 +6,7 @@ Examples of mpi4py + exception handling.
 
 ### Example 1
 
-`ex1-unsafe.py` is an example use case implemented with typical mpi-optional pattern. The implementation essentially treats the single non-mpi process as an mpi process with `rank == 0` of `size == 1`. The program checks for `comm == None` to distinguish between mpi and non-mpi code paths.
+`ex1-unsafe.py` is an example use case implemented with typical mpi-optional pattern. 
 
 To run the non-mpi version:
 
@@ -20,6 +20,8 @@ To run the non-mpi version:
 0: (2) subtotal = 435
 0: (2) total = 435
 ```
+
+The implementation essentially treats the single non-mpi process as an mpi process with `rank == 0` of `size == 1`. The program checks for `comm == None` to distinguish between mpi and non-mpi code paths.
 
 To run the mpi-enabled version:
 
@@ -38,9 +40,9 @@ To run the mpi-enabled version:
 0: (2) total = 435
 ```
 
-In the mpi version, each rank is computing a subtotal and those are combined into a single total which is reported by rank 0.
+In the mpi version, each rank is computes an independent subtotal and which are then combined into a single total by rank 0.
 
-We can force an error to occur while generating data during the second iteration using the `--trigger-one` option. In the non-mpi version, the error is caught and the process skips to the next iteration:
+The `--trigger-one` option forces an error on rank 0 while generating the data during the second iteration. In the non-mpi version, the error is caught and the process skips to the next iteration:
 
 ```
 > python ex1-unsafe.py --trigger-one
@@ -68,9 +70,11 @@ However, the mpi version gets stuck and needs a `CRTL-C` to abort:
 ^C
 ```
 
+When the error is generated on rank 0 during the second iteration, it is caught on rank 0 and rank 0 moves onto the third iteration. rank 1 does not know about the error and is waiting at the broadcast step during the second iteration. When rank 0 moves on to third iteration, it generates the third dataset and broadcasts, which rank 1 picks up on its second iteration. rank 1 computes the subtotal using the data from the third iteration on its second iteration. rank 0, on its third iteration, eventually accepts the subtotal from rank 1 (computed on rank 1's second iteration using the data from the third iteration). rank 0 computes the combined total and has now reached the end of its process. Meanwhile, rank 1 moves on to its third iteration and gets stuck waiting at the broadcast step. A `CRTL-C` will come in handy at this point.
+
 ### Example 2
 
-One strategy to avoid getting stuck is to be more cautious before performing collective mpi communication. `ex2-safe.py` is an example implementation tries to catch errors when they occur in a single rank and broadcast/gatherall so that they are re-raised by all ranks.
+One strategy to avoid getting stuck is to be more cautious before performing collective mpi communication. The example implementation in `ex2-safe.py` tries to catch and communicate errors when they occur in any single rank and so that they can be re-raised by all ranks.
 
 The following shows what happens when we try `ex2-safe.py` with the `--trigger-one` option.
 
@@ -90,7 +94,7 @@ The following shows what happens when we try `ex2-safe.py` with the `--trigger-o
 
 ### Example 3
 
-`ex3-mpi4dummies.py` is an example that uses a helper class to achieve to achieve the same effect. The implementation is a bit cleaner and makes the pattern easy to reuse and extend.
+The example implementation in `ex3-mpi4dummies.py` uses a helper class to achieve to achieve the same effect. The helper classes in `mpi4dummies.py` allow for a less noisy main program and makes the pattern easy to reuse and extend.
 
 ```
 > mpiexec -n 2 python ex3-mpi4dummies.py --trigger-one --mpi
@@ -106,7 +110,7 @@ The following shows what happens when we try `ex2-safe.py` with the `--trigger-o
 0: (2) total = 435
 ```
 
-The `--trigger-two` argument can be used to induce and error at a different stage in the typical use case.
+The `--trigger-two` argument can be used to induce and error while one of the ranks is computing its subtotal before communicating back to the root rank. 
 
 
 ## References
