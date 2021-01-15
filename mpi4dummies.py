@@ -32,7 +32,7 @@ class SafeMPIComm(object):
         error = self.comm.bcast(error, root=root)
         if error is not None:
             # handle the error on all ranks
-            msg = f"{self.rank}: caught error before collective comm!"
+            msg = f"{self.rank}: caught error before bcast!"
             raise RuntimeError(msg) from error
 
         return self.comm.bcast(obj, root=root)
@@ -51,7 +51,7 @@ class SafeMPIComm(object):
         for error in errors:
             if error is not None:
                 # handle the error on all ranks
-                msg = f"{self.rank}: caught error before collective comm!"
+                msg = f"{self.rank}: caught error before gather"
                 raise RuntimeError(msg) from error
 
         return self.comm.gather(sendobj, root=root)

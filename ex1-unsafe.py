@@ -22,32 +22,36 @@ def main():
 
     for i in range(3):
         try:
-            # Try to set a value on rank 0
-            value = None
+            # try to generate data on rank 0
+            data = None
             if rank == 0:
                 if args.trigger_one and i == 1:
-                    raise RuntimeError(f"{rank}: error setting value!")
-                value = 123 * (10**i)
+                    raise RuntimeError(f"{rank}: error generating data!")
+                data = list(range((i+1)*10))
 
-            # broadcast value
+            # broadcast data
             if comm is not None:
-                value = comm.bcast(value, root=0)
+                data = comm.bcast(data, root=0)
 
-            # Each rank do something with value
+            # each rank computes a subtotal
             if rank == size - 1:
                 if args.trigger_two and i == 1:
-                    raise RuntimeError(f"{rank}: error using value!")
-            new_value = value + rank
+                    raise RuntimeError(f"{rank}: error performing work!")
+            subtotal = 0
+            for value in data[rank::size]:
+                subtotal += value
+            print(f"{rank}: ({i}) subtotal = {subtotal}")
 
-            # gather values
+            # gather subtotals
             if comm is not None:
-                values = comm.gather(new_value, root=0)
+                subtotals = comm.gather(subtotal, root=0)
             else:
-                values = [new_value, ]
+                subtotals = [subtotal, ]
 
-            # print combined result
+            # sum subtotals and print result
             if rank == 0:
-                print(f"{rank}: {values}")
+                total = sum(subtotals)
+                print(f"{rank}: ({i}) total = {total}")
 
         except Exception as e:
             print(f"{rank}: skipping iteration {i}: {type(e)} {e}")

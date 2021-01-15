@@ -22,14 +22,14 @@ def main():
 
     for i in range(3):
         try:
-            # Try to set a value on rank 0
             error = None
-            value = None
             try:
+                # try to generate data on rank 0
+                data = None
                 if rank == 0:
                     if args.trigger_one and i == 1:
-                        raise RuntimeError(f"{rank}: error setting value!")
-                    value = 123 * (10**i)
+                        raise RuntimeError(f"{rank}: error generating data!")
+                    data = list(range((i+1)*10))
             except Exception as e:
                 error = e
 
@@ -38,20 +38,23 @@ def main():
                 error = comm.bcast(error, root=0)
             if error is not None:
                 # handle the error on all ranks
-                msg = f"{rank}: caught error before collective comm!"
+                msg = f"{rank}: caught error before bcast!"
                 raise RuntimeError(msg) from error
 
-            # broadcast value
+            # broadcast data
             if comm is not None:
-                value = comm.bcast(value, root=0)
+                data = comm.bcast(data, root=0)
 
-            # Each rank do something with value
             error = None
             try:
+                # each rank computes a subtotal
                 if rank == size - 1:
                     if args.trigger_two and i == 1:
-                        raise RuntimeError(f"{rank}: error using value!")
-                new_value = value + rank
+                        raise RuntimeError(f"{rank}: error performing work!")
+                subtotal = 0
+                for value in data[rank::size]:
+                    subtotal += value
+                print(f"{rank}: ({i}) subtotal = {subtotal}")
             except Exception as e:
                 # only ranks with an error catch here
                 error = e
@@ -64,18 +67,19 @@ def main():
             for error in errors:
                 if error is not None:
                     # handle the error on all ranks
-                    msg = f"{rank}: caught error before collective comm!"
+                    msg = f"{rank}: caught error before gather!"
                     raise RuntimeError(msg) from error
 
-            # gather values
+            # gather subtotals
             if comm is not None:
-                values = comm.gather(new_value, root=0)
+                subtotals = comm.gather(subtotal, root=0)
             else:
-                values = [new_value, ]
+                subtotals = [subtotal, ]
 
-            # print combined result
+            # sum subtotals and print result
             if rank == 0:
-                print(f"{rank}: {values}")
+                total = sum(subtotals)
+                print(f"{rank}: {total}")
 
         except Exception as e:
                 print(f"{rank}: skipping iteration {i}: {type(e)} {e}")
