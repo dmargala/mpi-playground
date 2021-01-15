@@ -79,10 +79,10 @@ def main():
             # sum subtotals and print result
             if rank == 0:
                 total = sum(subtotals)
-                print(f"{rank}: {total}")
+                print(f"{rank}: ({i}) total = {total}")
 
         except Exception as e:
-                print(f"{rank}: skipping iteration {i}: {type(e)} {e}")
+                print(f"{rank}: ({i}) skipping -> {type(e)} {e}")
                 continue
 
 
