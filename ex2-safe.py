@@ -20,6 +20,10 @@ def main():
 
     print(f"{rank}: Hello!")
 
+    # synch comm group after saying hello
+    if comm is not None:
+        comm.barrier()
+
     for i in range(3):
         try:
             error = None

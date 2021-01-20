@@ -20,7 +20,11 @@ def main():
 
     rank, size = comm.rank, comm.size
 
-    print(f"{rank}: Hello!")
+    def say_hello():
+        print(f"{rank}: Hello!")
+
+    # synch comm group after saying hello
+    comm.barrier(say_hello)
 
     for i in range(3):
         try:

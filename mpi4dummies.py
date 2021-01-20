@@ -10,6 +10,9 @@ class NoMPIComm(object):
     def gather(self, rankfunc, root=0):
         return [rankfunc(), ]
 
+    def barrier(self, rankfunc):
+        rankfunc()
+
 
 class SafeMPIComm(object):
     def __init__(self, comm):
@@ -55,3 +58,22 @@ class SafeMPIComm(object):
                 raise RuntimeError(msg) from error
 
         return self.comm.gather(sendobj, root=root)
+
+    def barrier(self, rankfunc):
+        # all ranks call rankfunc
+        error = None
+        try:
+            rankfunc()
+        except Exception as e:
+            # only ranks with an error catch here
+            error = e
+
+        # check for error
+        errors = self.comm.allgather(error)
+        for error in errors:
+            if error is not None:
+                # handle error on all ranks
+                msg = f"{self.rank}: caught error before barrier"
+                raise RuntimeError(msg) from error
+
+        self.comm.barrier()
