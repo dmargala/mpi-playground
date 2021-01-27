@@ -1,6 +1,6 @@
-# mpi4dummies
+# mpi-playground
 
-Examples of mpi4py + exception handling.
+Examples of using mpi4py with exception handling and async-io patterns.
 
 ## Examples
 
@@ -40,7 +40,7 @@ To run the mpi-enabled version:
 0: (2) total = 435
 ```
 
-In the mpi version, each rank is computes an independent subtotal and which are then combined into a single total by rank 0.
+In the mpi version, each rank computes an independent subtotal which are then combined into a single total by rank 0.
 
 The `--trigger-one` option forces an error on rank 0 while generating the data during the second iteration. In the non-mpi version, the error is caught and the process skips to the next iteration:
 
@@ -94,10 +94,10 @@ The following shows what happens when we try `ex2-safe.py` with the `--trigger-o
 
 ### Example 3
 
-The example implementation in `ex3-mpi4dummies.py` uses a helper class to achieve to achieve the same effect. The helper classes in `mpi4dummies.py` allow for a less noisy main program and makes the pattern easy to reuse and extend.
+The example implementation in `ex3-safe-again.py` uses a helper class to achieve to achieve the same effect. The helper classes in `safety.py` allow for a less noisy main program and makes the pattern easy to reuse and extend.
 
 ```
-> mpiexec -n 2 python ex3-mpi4dummies.py --trigger-one --mpi
+> mpiexec -n 2 python ex3-safe-again.py --trigger-one --mpi
 0: Hello!
 1: Hello!
 0: (0) subtotal = 20

@@ -9,7 +9,7 @@ from asyncio import (
     AsyncIOComm,
 )
 
-from mpi4dummies import (
+from safety import (
     NoMPIComm,
     SafeMPIComm
 )

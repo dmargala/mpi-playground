@@ -20,6 +20,12 @@ class SafeMPIComm(object):
         self.rank = comm.rank
         self.size = comm.size
 
+    # def send(self, func, dest, tag=0):
+    #     pass
+
+    # def recv(self, func, buf=None, source=ANY_SOURCE, tag=ANY_TAG, status=None):
+    #     pass
+
     def bcast(self, rootfunc, root=0):
         # only root rank calls rootfunc
         obj = None

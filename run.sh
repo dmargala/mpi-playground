@@ -32,7 +32,7 @@ printf "> $cmd\n"
 $cmd
 
 printf "\n### Example 3\n"
-cmd="mpiexec -n 2 python ex3-mpi4dummies.py --trigger-one --mpi"
+cmd="mpiexec -n 2 python ex3-safe-again.py --trigger-one --mpi"
 printf "> $cmd\n"
 $cmd
 
