@@ -30,7 +30,7 @@ def main():
     for i in range(3):
         try:
             # try to generate data on rank 0
-            def rootfunc():
+            def load_data():
                 if args.trigger_one and i == 1:
                     raise RuntimeError(f"{rank}: error generating data!")
                 numbers = list(range(i*10, (i+1)*10))
@@ -38,10 +38,10 @@ def main():
                 return numbers
 
             # broadcast data
-            numbers = comm.bcast(rootfunc, root=0)
+            numbers = comm.bcast(load_data, root=0)
 
             # each rank computes a subtotal
-            def rankfunc():
+            def process_data():
                 if rank == size - 1:
                     if args.trigger_two and i == 1:
                         raise RuntimeError(f"{rank}: error performing work!")
@@ -52,7 +52,7 @@ def main():
                 return subtotal
 
             # gather subtotals
-            subtotals = comm.gather(rankfunc, root=0)
+            subtotals = comm.gather(process_data, root=0)
 
             # sum subtotals and print result
             if rank == 0:

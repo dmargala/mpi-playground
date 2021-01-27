@@ -33,11 +33,6 @@ class SyncIOComm(object):
     WORK_ROOT = 0
 
     def __init__(self, comm):
-        """Synchronous communication manager.
-
-        Args:
-            comm: the parent MPI communicator. Must have at least 1 rank
-        """
         self.comm = comm
         self.rank = comm.rank
         self.size = comm.size
@@ -65,11 +60,6 @@ class AsyncIOComm(object):
     WORK_ROOT = 2
 
     def __init__(self, comm):
-        """Asynchronous communication manager.
-
-        Args:
-            comm: the parent MPI communicator. Must have at least 3 ranks
-        """
         self.comm = comm
         self.rank = comm.rank
         self.size = comm.size
@@ -84,26 +74,12 @@ class AsyncIOComm(object):
             self.work_comm = comm.Create_group(self.work_group)
 
     def is_worker(self):
-        """Returns True if this MPI rank is part of the extraction group.
-        Otherwise returns False.
-        """
         return self.comm.rank >= AsyncIOComm.WORK_ROOT
 
     def is_worker_root(self):
         return self.comm.rank == AsyncIOComm.WORK_ROOT
 
     def read(self, func, data):
-        """READ_RANK will call `func` and send the result to WORK_ROOT.
-        WORK_ROOT returns the result from READ_RANK. All other ranks return 
-        the provided default `data`.
-
-        Args:
-            func (method): function to be called by READ_RANK that reads input data.
-            data: default placeholder for data. mostly here for symmetry with `write(...)`
-
-        Returns: 
-            data: either the provided default data or data returned by func on WORK_ROOT/READ_RANK
-        """
         if self.comm.rank == AsyncIOComm.READ_RANK:
             data = func()
             self.comm.send(data, dest=AsyncIOComm.WORK_ROOT, tag=1)
@@ -112,19 +88,50 @@ class AsyncIOComm(object):
         return data
 
     def write(self, func, data):
-        """WORK_ROOT sends `data` to WRITE_RANK. WRITE_RANK calls `func` to
-        write `data`. This is a no-op for all other ranks.
-
-        Args:
-            func (method): function that writes `data`.
-            data: the data to be written by `func`.
-        """
         if self.comm.rank == AsyncIOComm.WORK_ROOT:
             self.comm.send(data, dest=AsyncIOComm.WRITE_RANK, tag=2)
         elif self.comm.rank == AsyncIOComm.WRITE_RANK:
             data = self.comm.recv(source=AsyncIOComm.WORK_ROOT, tag=2)
             func(data)
 
+class MyModule(object):
+    def __init__(self, rank, size, index, args):
+        self.rank = rank
+        self.size = size
+        self.index = index
+        self.trigger_one = args.trigger_one
+        self.trigger_two = args.trigger_two
+        self.trigger_three = args.trigger_three
+
+    def msg(self, s):
+        return f"{self.rank}: ({self.index}) {s}"
+
+    def load_data(self, n):
+        time.sleep(0.5)
+        if self.trigger_one and self.index == 1:
+            raise RuntimeError(self.msg(f"error during load_data!"))
+        numbers = list(range((self.index*n), (self.index+1)*n))
+        print(self.msg(f"numbers = {numbers}"))
+        return numbers
+
+    def process_data(self, numbers):
+        if self.trigger_two and self.index == 1:
+            if self.rank == self.size - 1:
+                raise RuntimeError(self.msg(f"error during process_data!"))
+        subtotal = 0
+        for value in numbers:
+            time.sleep(0.05)
+            subtotal += value
+        print(self.msg(f"subtotal = {subtotal}"))
+        return subtotal
+
+    def write_result(self, subtotals):
+        time.sleep(0.5)
+        if self.trigger_three and self.index == 1:
+            raise RuntimeError(self.msg(f"error during write_result!"))
+        # sum subtotals and print result
+        total = sum(subtotals)
+        print(self.msg(f"total = {total}"))
 
 def main():
 
@@ -155,16 +162,9 @@ def main():
 
     for i in range(3):
         try:
-            def read():
-                time.sleep(0.5)
-                if args.trigger_one and i == 1:
-                    raise RuntimeError(f"{rank}: error generating data!")
-                # try to generate data on rank 0
-                numbers = list(range(i*10, (i+1)*10))
-                print(f"{rank}: ({i}) numbers = {numbers}")
-                return numbers
+            mymod = MyModule(rank, size, i, args)
 
-            numbers = comm.read(read, None)
+            numbers = comm.read(lambda: mymod.load_data(10), None)
 
             subtotals = None
 
@@ -173,36 +173,18 @@ def main():
                 # broadcast data
                 if comm.work_comm is not None:
                     numbers = comm.work_comm.bcast(numbers, root=0)
-
                     numbers = numbers[comm.work_comm.rank::comm.work_comm.size]
 
-                # each rank computes a subtotal
-                def work():
-                    if rank == size - 1:
-                        if args.trigger_two and i == 1:
-                            raise RuntimeError(f"{rank}: error performing work!")
-                    subtotal = 0
-                    for value in numbers:
-                        time.sleep(0.05)
-                        subtotal += value
-                    print(f"{rank}: ({i}) subtotal = {subtotal}")
-                    return subtotal
+                subtotal = mymod.process_data(numbers)
 
                 # gather subtotals
                 if comm.work_comm is not None:
-                    subtotals = comm.work_comm.gather(work(), root=0)
+                    subtotals = comm.work_comm.gather(subtotal, root=0)
                 else:
-                    subtotals = [work()]
+                    subtotals = [subtotal, ]
 
-            def write(subtotals):
-                time.sleep(0.5)
-                if args.trigger_three and i == 1:
-                    raise RuntimeError(f"{rank}: error writing result!")
-                # sum subtotals and print result
-                total = sum(subtotals)
-                print(f"{rank}: ({i}) total = {total}")
+            comm.write(lambda r: mymod.write_result(r), subtotals)
 
-            comm.write(write, subtotals)
         except Exception as e:
             print(f"{rank}: ({i}) skipping -> {type(e)} {e}")
             continue
