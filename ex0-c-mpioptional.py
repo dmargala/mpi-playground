@@ -23,17 +23,18 @@ def main():
 
     for i in range(3):
         # try to generate data on rank 0
-        data = None
+        numbers = None
         if rank == 0:
-            data = list(range((i+1)*10))
+            numbers = list(range(i*10, (i+1)*10))
+            print(f"{rank}: ({i}) numbers = {numbers}")
 
         # broadcast data
         if comm is not None:
-            data = comm.bcast(data, root=0)
+            numbers = comm.bcast(numbers, root=0)
 
         # each rank computes a subtotal
         subtotal = 0
-        for value in data[rank::size]:
+        for value in numbers[rank::size]:
             subtotal += value
         print(f"{rank}: ({i}) subtotal = {subtotal}")
 

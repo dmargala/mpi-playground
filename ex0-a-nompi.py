@@ -7,11 +7,12 @@ def main():
 
     for i in range(3):
         # generate data
-        data = list(range((i+1)*10))
+        numbers = list(range(i*10, (i+1)*10))
+        print(f"({i}) numbers = {numbers}")
 
         # compute total
         total = 0
-        for value in data:
+        for value in numbers:
             total += value
 
         # print result
