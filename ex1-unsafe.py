@@ -8,6 +8,7 @@ def main():
     parser.add_argument("--mpi", action="store_true", help="use mpi")
     parser.add_argument("--trigger-one", action="store_true", help="raise error")
     parser.add_argument("--trigger-two", action="store_true", help="raise error")
+    parser.add_argument("--trigger-three", action="store_true", help="raise error")
     args = parser.parse_args()
 
     if args.mpi:
@@ -54,6 +55,8 @@ def main():
 
             # sum subtotals and print result
             if rank == 0:
+                if args.trigger_three and i == 1:
+                    raise RuntimeError(f"{rank}: error printing result!")
                 total = sum(subtotals)
                 print(f"{rank}: ({i}) total = {total}")
 
