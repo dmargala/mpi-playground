@@ -44,15 +44,15 @@ def main():
     for i in range(3):
         try:
             def read():
-                time.sleep(1)
+                time.sleep(0.5)
                 if args.trigger_one and i == 1:
                     raise RuntimeError(f"{rank}: error generating data!")
                 # try to generate data on rank 0
-                data = list(range((i+1)*10))
-                print(f"{rank}: ({i}) data = {data}")
-                return data
+                numbers = list(range(i*10, (i+1)*10))
+                print(f"{rank}: ({i}) numbers = {numbers}")
+                return numbers
 
-            data = comm.read(read, None)
+            numbers = comm.read(read, None)
 
             subtotals = None
 
@@ -64,7 +64,8 @@ def main():
                     work_comm = NoMPIComm()
 
                 # broadcast data
-                data = work_comm.bcast(lambda: data, root=0)
+                numbers = work_comm.bcast(lambda: numbers, root=0)
+                numbers = numbers[work_comm.rank::work_comm.size]
 
                 # each rank computes a subtotal
                 def work():
@@ -72,8 +73,8 @@ def main():
                         if args.trigger_two and i == 1:
                             raise RuntimeError(f"{rank}: error performing work!")
                     subtotal = 0
-                    for value in data[work_comm.rank::work_comm.size]:
-                        time.sleep(0.2)
+                    for value in numbers:
+                        time.sleep(0.05)
                         subtotal += value
                     print(f"{rank}: ({i}) subtotal = {subtotal}")
                     return subtotal
@@ -86,14 +87,13 @@ def main():
                     error = e
                     
                 if comm.is_worker_root() and isinstance(comm, AsyncIOComm):
-                    print(f"{rank}: ({i}) sending {error}")
                     comm.comm.send(error, comm.WRITE_RANK, tag=0)
 
                 if error is not None:
                     raise error
 
             def write(subtotals):
-                time.sleep(1)
+                time.sleep(0.5)
                 if args.trigger_three and i == 1:
                     raise RuntimeError(f"{rank}: error writing result!")
                 # sum subtotals and print result
