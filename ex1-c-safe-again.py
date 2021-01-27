@@ -2,6 +2,8 @@
 
 import argparse
 
+from safety import NoMPIComm, SafeMPIComm
+
 def main():
 
     parser = argparse.ArgumentParser(allow_abbrev=False)
@@ -13,45 +15,44 @@ def main():
 
     if args.mpi:
         from mpi4py import MPI
-        comm = MPI.COMM_WORLD
-        rank, size = comm.rank, comm.size
+        comm = SafeMPIComm(MPI.COMM_WORLD)
     else:
-        comm = None
-        rank, size = 0, 1
+        comm = NoMPIComm()
 
-    print(f"{rank}: Hello!")
+    rank, size = comm.rank, comm.size
+
+    def say_hello():
+        print(f"{rank}: Hello!")
 
     # synch comm group after saying hello
-    if comm is not None:
-        comm.barrier()
+    comm.barrier(say_hello)
 
     for i in range(3):
         try:
             # try to generate data on rank 0
-            data = None
-            if rank == 0:
+            def rootfunc():
                 if args.trigger_one and i == 1:
                     raise RuntimeError(f"{rank}: error generating data!")
-                data = list(range((i+1)*10))
+                numbers = list(range(i*10, (i+1)*10))
+                print(f"{rank}: ({i}) numbers = {numbers}")
+                return numbers
 
             # broadcast data
-            if comm is not None:
-                data = comm.bcast(data, root=0)
+            numbers = comm.bcast(rootfunc, root=0)
 
             # each rank computes a subtotal
-            if rank == size - 1:
-                if args.trigger_two and i == 1:
-                    raise RuntimeError(f"{rank}: error performing work!")
-            subtotal = 0
-            for value in data[rank::size]:
-                subtotal += value
-            print(f"{rank}: ({i}) subtotal = {subtotal}")
+            def rankfunc():
+                if rank == size - 1:
+                    if args.trigger_two and i == 1:
+                        raise RuntimeError(f"{rank}: error performing work!")
+                subtotal = 0
+                for value in numbers[rank::size]:
+                    subtotal += value
+                print(f"{rank}: ({i}) subtotal = {subtotal}")
+                return subtotal
 
             # gather subtotals
-            if comm is not None:
-                subtotals = comm.gather(subtotal, root=0)
-            else:
-                subtotals = [subtotal, ]
+            subtotals = comm.gather(rankfunc, root=0)
 
             # sum subtotals and print result
             if rank == 0:

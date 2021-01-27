@@ -30,11 +30,12 @@ def main():
             error = None
             try:
                 # try to generate data on rank 0
-                data = None
+                numbers = None
                 if rank == 0:
                     if args.trigger_one and i == 1:
                         raise RuntimeError(f"{rank}: error generating data!")
-                    data = list(range((i+1)*10))
+                    numbers = list(range(i*10, (i+1)*10))
+                    print(f"{rank}: ({i}) numbers = {numbers}")
             except Exception as e:
                 error = e
 
@@ -48,7 +49,7 @@ def main():
 
             # broadcast data
             if comm is not None:
-                data = comm.bcast(data, root=0)
+                numbers = comm.bcast(numbers, root=0)
 
             error = None
             try:
@@ -57,7 +58,7 @@ def main():
                     if args.trigger_two and i == 1:
                         raise RuntimeError(f"{rank}: error performing work!")
                 subtotal = 0
-                for value in data[rank::size]:
+                for value in numbers[rank::size]:
                     subtotal += value
                 print(f"{rank}: ({i}) subtotal = {subtotal}")
             except Exception as e:
