@@ -14,6 +14,45 @@ from mpi4dummies import (
     SafeMPIComm
 )
 
+class MyModule(object):
+    def __init__(self, rank, size, index, args):
+        self.rank = rank
+        self.size = size
+        self.index = index
+        self.trigger_one = args.trigger_one
+        self.trigger_two = args.trigger_two
+        self.trigger_three = args.trigger_three
+
+    def msg(self, s):
+        return f"{self.rank}: ({self.index}) {s}"
+
+    def load_data(self, n):
+        time.sleep(0.5)
+        if self.trigger_one and self.index == 1:
+            raise RuntimeError(self.msg(f"error during load_data!"))
+        numbers = list(range((self.index*n), (self.index+1)*n))
+        print(self.msg(f"numbers = {numbers}"))
+        return numbers
+
+    def process_data(self, numbers):
+        if self.trigger_two and self.index == 1:
+            if self.rank == self.size - 1:
+                raise RuntimeError(self.msg(f"error during process_data!"))
+        subtotal = 0
+        for value in numbers:
+            time.sleep(0.05)
+            subtotal += value
+        print(self.msg(f"subtotal = {subtotal}"))
+        return subtotal
+
+    def write_result(self, subtotals):
+        time.sleep(0.5)
+        if self.trigger_three and self.index == 1:
+            raise RuntimeError(self.msg(f"error during write_result!"))
+        # sum subtotals and print result
+        total = sum(subtotals)
+        print(self.msg(f"total = {total}"))
+
 def main():
 
     parser = argparse.ArgumentParser(allow_abbrev=False)
@@ -41,42 +80,12 @@ def main():
     # synch comm group after saying hello
     # comm.comm.barrier(say_hello)
 
-    class MyModule(object):
-        def __init__(self):
-            pass
-
-        def load_data(self, index):
-            time.sleep(0.5)
-            if args.trigger_one and index == 1:
-                raise RuntimeError(f"{rank}: error during load_data!")
-            numbers = list(range((index*10), (index+1)*10))
-            print(f"{rank}: ({i}) numbers = {numbers}")
-            return numbers
-
-        def process_data(self, index, numbers):
-            if args.trigger_two and index == 1 and rank == size - 1:
-                raise RuntimeError(f"{rank}: error during process_data!")
-            subtotal = 0
-            for value in numbers:
-                time.sleep(0.05)
-                subtotal += value
-            print(f"{rank}: ({index}) subtotal = {subtotal}")
-            return subtotal
-
-        def write_result(self, index, subtotals):
-            time.sleep(0.5)
-            if args.trigger_three and index == 1:
-                raise RuntimeError(f"{rank}: error during write_result!")
-            # sum subtotals and print result
-            total = sum(subtotals)
-            print(f"{rank}: ({i}) total = {total}")
-
-    mymod = MyModule()
-
     for i in range(10):
         try:
 
-            numbers = comm.read(lambda: mymod.load_data(i), None)
+            mymod = MyModule(rank, size, i, args)
+
+            numbers = comm.read(lambda: mymod.load_data(10), None)
 
             subtotals = None
 
@@ -91,13 +100,14 @@ def main():
                 numbers = work_comm.bcast(lambda: numbers, root=0)
 
                 # each rank computes a subtotal
+                # note: this is essentially an inefficient mpi scatter
                 numbers = numbers[work_comm.rank::work_comm.size]
 
                 # gather subtotals
                 error = None
                 try:
                     subtotals = work_comm.gather(
-                        lambda: mymod.process_data(i, numbers), root=0
+                        lambda: mymod.process_data(numbers), root=0
                     )
                 except Exception as e:
                     # workers catch the error here so worker_root can send to write_rank
@@ -113,7 +123,7 @@ def main():
 
             # sum subtotals and print result
             comm.write(
-                lambda result: mymod.write_result(i, result), subtotals
+                lambda result: mymod.write_result(result), subtotals
             )
 
         except Exception as e:
