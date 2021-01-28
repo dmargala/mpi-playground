@@ -22,12 +22,6 @@ class SafeMPIComm(object):
         self.rank = comm.rank
         self.size = comm.size
 
-    # def send(self, func, dest, tag=0):
-    #     pass
-
-    # def recv(self, func, buf=None, source=ANY_SOURCE, tag=ANY_TAG, status=None):
-    #     pass
-
     def bcast(self, rootfunc, root=0):
         # only root rank calls rootfunc
         obj = None
@@ -41,8 +35,8 @@ class SafeMPIComm(object):
 
         # check for error
         error = self.comm.bcast(error, root=root)
+        # handle the error on all ranks
         if error is not None:
-            # handle the error on all ranks
             msg = f"{self.rank}: caught error before bcast!"
             raise RuntimeError(msg) from error
 
@@ -59,9 +53,9 @@ class SafeMPIComm(object):
 
         # check for error
         errors = self.comm.allgather(error)
+        # handle the error(s) on all ranks
         for error in errors:
             if error is not None:
-                # handle the error on all ranks
                 msg = f"{self.rank}: caught error before gather"
                 raise RuntimeError(msg) from error
 
@@ -78,9 +72,9 @@ class SafeMPIComm(object):
 
         # check for error
         errors = self.comm.allgather(error)
+        # handle the error(s) on all ranks
         for error in errors:
             if error is not None:
-                # handle error on all ranks
                 msg = f"{self.rank}: caught error before barrier"
                 raise RuntimeError(msg) from error
 
@@ -122,7 +116,6 @@ class MyModule(object):
         time.sleep(0.5)
         if self.trigger_three and self.index == 1:
             raise RuntimeError(self.msg(f"error during write_result!"))
-        # sum subtotals and print result
         total = sum(subtotals)
         print(self.msg(f"total = {total}"))
 
@@ -249,8 +242,8 @@ class AsyncIOComm(object):
 
         # check for error
         error = self.comm.bcast(error, root=AsyncIOComm.READ_RANK)
+        # handle the error on all ranks
         if error is not None:
-            # handle the error on all ranks
             msg = f"{self.comm.rank}: caught during read!"
             raise RuntimeError(msg) from error
 

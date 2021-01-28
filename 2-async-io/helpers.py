@@ -35,7 +35,6 @@ class MyModule(object):
         time.sleep(0.5)
         if self.trigger_three and self.index == 1:
             raise RuntimeError(self.msg(f"error during write_result!"))
-        # sum subtotals and print result
         total = sum(subtotals)
         print(self.msg(f"total = {total}"))
 

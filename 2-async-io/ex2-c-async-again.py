@@ -19,6 +19,7 @@ def main():
     parser.add_argument("--async-io", action="store_true", help="async io")
     args = parser.parse_args()
 
+    # optional mpi setup
     if args.mpi:
         from mpi4py import MPI
         if args.async_io:
@@ -30,40 +31,41 @@ def main():
 
     rank, size = comm.rank, comm.size
 
-    def say_hello():
-        print(f"{rank}: Hello!")
+    # say hello
+    print(f"{rank}: Hello!")
+    if comm.comm is not None:
+        comm.comm.barrier()
 
-    # synch comm group after saying hello
-    # comm.comm.barrier(say_hello)
-
+    # iterate over tasks
     for i in range(3):
-        try:
-            mymod = MyModule(rank, size, i, args)
 
-            numbers = comm.read(lambda: mymod.load_data(10), None)
+        mymod = MyModule(rank, size, i, args)
 
-            subtotals = None
+        # generate data
+        numbers = comm.read(lambda: mymod.load_data(10), None)
 
-            if comm.is_worker():
+        subtotals = None
+        if comm.is_worker():
 
-                # broadcast data
-                if comm.work_comm is not None:
-                    numbers = comm.work_comm.bcast(numbers, root=0)
-                    numbers = numbers[comm.work_comm.rank::comm.work_comm.size]
+            # broadcast data
+            if comm.work_comm is not None:
+                numbers = comm.work_comm.bcast(numbers, root=0)
+                numbers = numbers[comm.work_comm.rank::comm.work_comm.size]
 
-                subtotal = mymod.process_data(numbers)
+            # each rank computes a subtotal
+            subtotal = mymod.process_data(numbers)
 
-                # gather subtotals
-                if comm.work_comm is not None:
-                    subtotals = comm.work_comm.gather(subtotal, root=0)
-                else:
-                    subtotals = [subtotal, ]
+            # gather subtotals
+            if comm.work_comm is not None:
+                subtotals = comm.work_comm.gather(subtotal, root=0)
+            else:
+                subtotals = [subtotal, ]
 
-            comm.write(lambda r: mymod.write_result(r), subtotals)
+        # sum subtotals and print result
+        comm.write(lambda r: mymod.write_result(r), subtotals)
 
-        except Exception as e:
-            print(f"{rank}: ({i}) skipping -> {type(e)} {e}")
-            continue
+    if comm.comm is not None:
+        comm.comm.barrier()
 
 
 if __name__ == "__main__":

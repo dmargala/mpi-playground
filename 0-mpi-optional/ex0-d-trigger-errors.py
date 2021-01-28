@@ -2,8 +2,6 @@
 
 import argparse
 
-from helpers import MyModule
-
 def main():
 
     parser = argparse.ArgumentParser(allow_abbrev=False)
@@ -30,19 +28,26 @@ def main():
     # iterate over tasks
     for i in range(3):
 
-        mymod = MyModule(rank, size, i, args)
-
         # generate data
         numbers = None
         if rank == 0:
-            numbers = mymod.load_data(10)
+            if args.trigger_one and i == 1:
+                raise RuntimeError(f"{rank}: error generating data!")
+            numbers = list(range(i*10, (i+1)*10))
+            print(f"{rank}: ({i}) numbers = {numbers}")
 
         # broadcast data
         if comm is not None:
             numbers = comm.bcast(numbers, root=0)
-            
+
         # each rank computes a subtotal
-        subtotal = mymod.process_data(numbers[rank::size])
+        if rank == size - 1:
+            if args.trigger_two and i == 1:
+                raise RuntimeError(f"{rank}: error performing work!")
+        subtotal = 0
+        for value in numbers[rank::size]:
+            subtotal += value
+        print(f"{rank}: ({i}) subtotal = {subtotal}")
 
         # gather subtotals
         if comm is not None:
@@ -52,10 +57,11 @@ def main():
 
         # sum subtotals and print result
         if rank == 0:
-            mymod.write_result(subtotals)
+            if args.trigger_three and i == 1:
+                raise RuntimeError(f"{rank}: error printing result!")
+            total = sum(subtotals)
+            print(f"{rank}: ({i}) total = {total}")
 
-    if comm is not None:
-        comm.barrier()
 
 
 if __name__ == "__main__":

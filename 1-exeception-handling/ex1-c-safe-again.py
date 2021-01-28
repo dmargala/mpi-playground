@@ -13,6 +13,7 @@ def main():
     parser.add_argument("--trigger-three", action="store_true", help="raise error")
     args = parser.parse_args()
 
+    # optional mpi setup
     if args.mpi:
         from mpi4py import MPI
         comm = SafeMPIComm(MPI.COMM_WORLD)
@@ -21,15 +22,16 @@ def main():
 
     rank, size = comm.rank, comm.size
 
+    # say hello
     def say_hello():
         print(f"{rank}: Hello!")
-
-    # synch comm group after saying hello
     comm.barrier(say_hello)
 
+    # iterate over tasks
     for i in range(3):
+
         try:
-            # try to generate data on rank 0
+            # generate data
             def load_data():
                 if args.trigger_one and i == 1:
                     raise RuntimeError(f"{rank}: error generating data!")
@@ -55,11 +57,14 @@ def main():
             subtotals = comm.gather(process_data, root=0)
 
             # sum subtotals and print result
-            if rank == 0:
+            def write_result():
                 if args.trigger_three and i == 1:
                     raise RuntimeError(f"{rank}: error printing result!")
                 total = sum(subtotals)
                 print(f"{rank}: ({i}) total = {total}")
+
+            if rank == 0:
+                write_result()
 
         except Exception as e:
             print(f"{rank}: ({i}) skipping -> {type(e)} {e}")

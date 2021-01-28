@@ -11,6 +11,7 @@ def main():
     parser.add_argument("--trigger-three", action="store_true", help="raise error")
     args = parser.parse_args()
 
+    # optional mpi setup
     if args.mpi:
         from mpi4py import MPI
         comm = MPI.COMM_WORLD
@@ -19,15 +20,16 @@ def main():
         comm = None
         rank, size = 0, 1
 
+    # say hello
     print(f"{rank}: Hello!")
-
-    # synch comm group after saying hello
     if comm is not None:
         comm.barrier()
 
+    # iterate over tasks
     for i in range(3):
+        
         try:
-            # try to generate data on rank 0
+            # generate data
             numbers = None
             if rank == 0:
                 if args.trigger_one and i == 1:

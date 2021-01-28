@@ -12,7 +12,7 @@ cmd="mpiexec -n 2 ex2-a-refactor.py --mpi"
 printf "> $cmd\n"
 $cmd
 
-printf "\n### b\n"
+printf "\n### Part b\n"
 cmd="python ex2-b-async.py"
 printf "> $cmd\n"
 $cmd
@@ -27,7 +27,7 @@ cmd="mpiexec -n 4 python ex2-b-async.py --mpi --async-io"
 printf "> $cmd\n"
 $cmd
 
-printf "\n### c\n"
+printf "\n### Part c\n"
 cmd="python ex2-c-async-again.py"
 printf "> $cmd\n"
 $cmd

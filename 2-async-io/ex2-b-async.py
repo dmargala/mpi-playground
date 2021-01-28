@@ -14,6 +14,7 @@ def main():
     parser.add_argument("--async-io", action="store_true", help="async io")
     args = parser.parse_args()
 
+    # optional mpi setup
     if args.mpi:
         from mpi4py import MPI
         comm = MPI.COMM_WORLD
@@ -33,55 +34,56 @@ def main():
         READ_RANK, WRITE_RANK, WORK_ROOT = 0, 0, 0
         work_comm = None
 
-    def say_hello():
-        print(f"{rank}: Hello!")
+    # say hello
+    print(f"{rank}: Hello!")
+    if comm is not None:
+        comm.barrier()
 
-    # synch comm group after saying hello
-    # comm.comm.barrier(say_hello)
-
+    # iterate over tasks
     for i in range(3):
-        try:
-            mymod = MyModule(rank, size, i, args)
 
-            # try to generate data on rank 0
-            numbers = None
+        mymod = MyModule(rank, size, i, args)
+
+        # generate data
+        numbers = None
+        if rank == READ_RANK:
+            numbers = mymod.load_data(10)
+
+        if args.async_io:
             if rank == READ_RANK:
-                numbers = mymod.load_data(10)
+                comm.send(numbers, dest=WORK_ROOT)
+            elif rank == WORK_ROOT:
+                numbers = comm.recv(source=READ_RANK)
 
-            if args.async_io:
-                if rank == READ_RANK:
-                    comm.send(numbers, dest=WORK_ROOT)
-                elif rank == WORK_ROOT:
-                    numbers = comm.recv(source=READ_RANK)
+        subtotals = None
+        if rank >= WORK_ROOT:
 
-            subtotals = None
-            if rank >= WORK_ROOT:
+            # broadcast data
+            if work_comm is not None:
+                numbers = work_comm.bcast(numbers, root=0)
+                numbers = numbers[work_comm.rank::work_comm.size]
+            
+            # each rank computes a subtotal
+            subtotal = mymod.process_data(numbers)
 
-                # broadcast data
-                if work_comm is not None:
-                    numbers = work_comm.bcast(numbers, root=0)
-                    numbers = numbers[work_comm.rank::work_comm.size]
-                
-                subtotal = mymod.process_data(numbers)
+            # gather subtotals
+            if work_comm is not None:
+                subtotals = work_comm.gather(subtotal, root=0)
+            else:
+                subtotals = [subtotal, ]
 
-                # gather subtotals
-                if work_comm is not None:
-                    subtotals = work_comm.gather(subtotal, root=0)
-                else:
-                    subtotals = [subtotal, ]
+        if args.async_io:
+            if rank == WORK_ROOT:
+                comm.send(subtotals, dest=WRITE_RANK)
+            elif rank == WRITE_RANK:
+                subtotals = comm.recv(source=WORK_ROOT)
 
-            if args.async_io:
-                if rank == WORK_ROOT:
-                    comm.send(subtotals, dest=WRITE_RANK)
-                elif rank == WRITE_RANK:
-                    subtotals = comm.recv(source=WORK_ROOT)
+        # sum subtotals and print result
+        if rank == WRITE_RANK:
+            mymod.write_result(subtotals)
 
-            if rank == WRITE_RANK:
-                mymod.write_result(subtotals)
-
-        except Exception as e:
-            print(f"{rank}: ({i}) skipping -> {type(e)} {e}")
-            continue
+    if comm is not None:
+        comm.barrier()
 
 
 if __name__ == "__main__":

@@ -11,6 +11,7 @@ def main():
     parser.add_argument("--trigger-three", action="store_true", help="raise error")
     args = parser.parse_args()
 
+    # optional mpi setup
     if args.mpi:
         from mpi4py import MPI
         comm = MPI.COMM_WORLD
@@ -19,17 +20,18 @@ def main():
         comm = None
         rank, size = 0, 1
 
+    # say hello
     print(f"{rank}: Hello!")
-
-    # synch comm group after saying hello
     if comm is not None:
         comm.barrier()
 
+    # iterate over tasks
     for i in range(3):
+
         try:
             error = None
             try:
-                # try to generate data on rank 0
+                # generate data
                 numbers = None
                 if rank == 0:
                     if args.trigger_one and i == 1:
@@ -37,13 +39,14 @@ def main():
                     numbers = list(range(i*10, (i+1)*10))
                     print(f"{rank}: ({i}) numbers = {numbers}")
             except Exception as e:
+                # only root catches error here
                 error = e
 
             # check for error
             if comm is not None:
                 error = comm.bcast(error, root=0)
+            # handle the error on all ranks
             if error is not None:
-                # handle the error on all ranks
                 msg = f"{rank}: caught error before bcast!"
                 raise RuntimeError(msg) from error
 
@@ -70,9 +73,9 @@ def main():
                 errors = comm.allgather(error)
             else:
                 errors = [error, ]
+            # handle error(s) on all ranks
             for error in errors:
                 if error is not None:
-                    # handle the error on all ranks
                     msg = f"{rank}: caught error before gather!"
                     raise RuntimeError(msg) from error
 
@@ -90,8 +93,8 @@ def main():
                 print(f"{rank}: ({i}) total = {total}")
 
         except Exception as e:
-                print(f"{rank}: ({i}) skipping -> {type(e)} {e}")
-                continue
+            print(f"{rank}: ({i}) skipping -> {type(e)} {e}")
+            continue
 
 
 if __name__ == "__main__":
