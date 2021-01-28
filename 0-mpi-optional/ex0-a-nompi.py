@@ -5,7 +5,9 @@ def main():
     # say hello
     print(f"Hello!")
 
+    # iterate over tasks
     for i in range(3):
+
         # generate data
         numbers = list(range(i*10, (i+1)*10))
         print(f"({i}) numbers = {numbers}")
@@ -17,7 +19,6 @@ def main():
 
         # print result
         print(f"({i}) total = {total}")
-
 
 
 if __name__ == "__main__":

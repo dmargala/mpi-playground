@@ -2,6 +2,7 @@
 
 def main():
 
+    # mpi setup
     from mpi4py import MPI
     comm = MPI.COMM_WORLD
     rank, size = comm.rank, comm.size
@@ -10,8 +11,10 @@ def main():
     print(f"{rank}: Hello!")
     comm.barrier()
 
+    # iterate over tasks
     for i in range(3):
-        # try to generate data on rank 0
+
+        # generate data
         numbers = None
         if rank == 0:
             numbers = list(range(i*10, (i+1)*10))
@@ -33,7 +36,6 @@ def main():
         if rank == 0:
             total = sum(subtotals)
             print(f"{rank}: ({i}) total = {total}")
-
 
 
 if __name__ == "__main__":

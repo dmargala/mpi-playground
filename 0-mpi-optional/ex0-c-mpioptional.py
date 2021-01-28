@@ -8,6 +8,7 @@ def main():
     parser.add_argument("--mpi", action="store_true", help="use mpi")
     args = parser.parse_args()
 
+    # optional mpi setup
     if args.mpi:
         from mpi4py import MPI
         comm = MPI.COMM_WORLD
@@ -21,8 +22,10 @@ def main():
     if comm is not None:
         comm.barrier()
 
+    # iterate over tasks
     for i in range(3):
-        # try to generate data on rank 0
+
+        # generate data
         numbers = None
         if rank == 0:
             numbers = list(range(i*10, (i+1)*10))
@@ -48,7 +51,6 @@ def main():
         if rank == 0:
             total = sum(subtotals)
             print(f"{rank}: ({i}) total = {total}")
-
 
 
 if __name__ == "__main__":
