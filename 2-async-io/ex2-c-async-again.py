@@ -7,8 +7,6 @@ from helpers import (
     NoMPIIOComm,
     SyncIOComm,
     AsyncIOComm,
-    NoMPIComm,
-    SafeMPIComm,
 )
 
 def main():
@@ -40,7 +38,6 @@ def main():
 
     for i in range(3):
         try:
-
             mymod = MyModule(rank, size, i, args)
 
             numbers = comm.read(lambda: mymod.load_data(10), None)
@@ -49,40 +46,20 @@ def main():
 
             if comm.is_worker():
 
-                if comm.work_comm is not None:
-                    work_comm = SafeMPIComm(comm.work_comm)
-                else:
-                    work_comm = NoMPIComm()
-
                 # broadcast data
-                numbers = work_comm.bcast(lambda: numbers, root=0)
+                if comm.work_comm is not None:
+                    numbers = comm.work_comm.bcast(numbers, root=0)
+                    numbers = numbers[comm.work_comm.rank::comm.work_comm.size]
 
-                # each rank computes a subtotal
-                # note: this is essentially an inefficient mpi scatter
-                numbers = numbers[work_comm.rank::work_comm.size]
+                subtotal = mymod.process_data(numbers)
 
                 # gather subtotals
-                error = None
-                try:
-                    subtotals = work_comm.gather(
-                        lambda: mymod.process_data(numbers), root=0
-                    )
-                except Exception as e:
-                    # workers catch the error here so worker_root can send to write_rank
-                    error = e
-                
-                # send the error to write rank before it tries to write anything
-                if comm.is_worker_root() and isinstance(comm, AsyncIOComm):
-                    comm.comm.send(error, comm.WRITE_RANK, tag=0)
+                if comm.work_comm is not None:
+                    subtotals = comm.work_comm.gather(subtotal, root=0)
+                else:
+                    subtotals = [subtotal, ]
 
-                # workers re-raise error here
-                if error is not None:
-                    raise error
-
-            # sum subtotals and print result
-            comm.write(
-                lambda result: mymod.write_result(result), subtotals
-            )
+            comm.write(lambda r: mymod.write_result(r), subtotals)
 
         except Exception as e:
             print(f"{rank}: ({i}) skipping -> {type(e)} {e}")

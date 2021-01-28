@@ -1,46 +1,8 @@
 #!/usr/bin/env python
 
 import argparse
-import time
 
-class MyModule(object):
-    def __init__(self, rank, size, index, args):
-        self.rank = rank
-        self.size = size
-        self.index = index
-        self.trigger_one = args.trigger_one
-        self.trigger_two = args.trigger_two
-        self.trigger_three = args.trigger_three
-
-    def msg(self, s):
-        return f"{self.rank}: ({self.index}) {s}"
-
-    def load_data(self, n):
-        time.sleep(0.5)
-        if self.trigger_one and self.index == 1:
-            raise RuntimeError(self.msg(f"error during load_data!"))
-        numbers = list(range((self.index*n), (self.index+1)*n))
-        print(self.msg(f"numbers = {numbers}"))
-        return numbers
-
-    def process_data(self, numbers):
-        if self.trigger_two and self.index == 1:
-            if self.rank == self.size - 1:
-                raise RuntimeError(self.msg(f"error during process_data!"))
-        subtotal = 0
-        for value in numbers:
-            time.sleep(0.05)
-            subtotal += value
-        print(self.msg(f"subtotal = {subtotal}"))
-        return subtotal
-
-    def write_result(self, subtotals):
-        time.sleep(0.5)
-        if self.trigger_three and self.index == 1:
-            raise RuntimeError(self.msg(f"error during write_result!"))
-        # sum subtotals and print result
-        total = sum(subtotals)
-        print(self.msg(f"total = {total}"))
+from helpers import MyModule
 
 def main():
 

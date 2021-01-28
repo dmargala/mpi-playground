@@ -1,3 +1,131 @@
+import time
+
+class NoMPIComm(object):
+    def __init__(self):
+        self.comm = None
+        self.rank = 0
+        self.size = 1
+
+    def bcast(self, rootfunc, root=0):
+        return rootfunc()
+
+    def gather(self, rankfunc, root=0):
+        return [rankfunc(), ]
+
+    def barrier(self, rankfunc):
+        rankfunc()
+
+
+class SafeMPIComm(object):
+    def __init__(self, comm):
+        self.comm = comm
+        self.rank = comm.rank
+        self.size = comm.size
+
+    # def send(self, func, dest, tag=0):
+    #     pass
+
+    # def recv(self, func, buf=None, source=ANY_SOURCE, tag=ANY_TAG, status=None):
+    #     pass
+
+    def bcast(self, rootfunc, root=0):
+        # only root rank calls rootfunc
+        obj = None
+        error = None
+        try:
+            if self.rank == root:
+                obj = rootfunc()
+        except Exception as e:
+            # only root catches error here
+            error = e
+
+        # check for error
+        error = self.comm.bcast(error, root=root)
+        if error is not None:
+            # handle the error on all ranks
+            msg = f"{self.rank}: caught error before bcast!"
+            raise RuntimeError(msg) from error
+
+        return self.comm.bcast(obj, root=root)
+
+    def gather(self, rankfunc, root=0):
+        # all ranks call rankfunc
+        error = None
+        try:
+            sendobj = rankfunc()
+        except Exception as e:
+            # only ranks with an error catch here
+            error = e
+
+        # check for error
+        errors = self.comm.allgather(error)
+        for error in errors:
+            if error is not None:
+                # handle the error on all ranks
+                msg = f"{self.rank}: caught error before gather"
+                raise RuntimeError(msg) from error
+
+        return self.comm.gather(sendobj, root=root)
+
+    def barrier(self, rankfunc):
+        # all ranks call rankfunc
+        error = None
+        try:
+            rankfunc()
+        except Exception as e:
+            # only ranks with an error catch here
+            error = e
+
+        # check for error
+        errors = self.comm.allgather(error)
+        for error in errors:
+            if error is not None:
+                # handle error on all ranks
+                msg = f"{self.rank}: caught error before barrier"
+                raise RuntimeError(msg) from error
+
+        self.comm.barrier()
+
+
+class MyModule(object):
+    def __init__(self, rank, size, index, args):
+        self.rank = rank
+        self.size = size
+        self.index = index
+        self.trigger_one = args.trigger_one
+        self.trigger_two = args.trigger_two
+        self.trigger_three = args.trigger_three
+
+    def msg(self, s):
+        return f"{self.rank}: ({self.index}) {s}"
+
+    def load_data(self, n):
+        time.sleep(0.5)
+        if self.trigger_one and self.index == 1:
+            raise RuntimeError(self.msg(f"error during load_data!"))
+        numbers = list(range((self.index*n), (self.index+1)*n))
+        print(self.msg(f"numbers = {numbers}"))
+        return numbers
+
+    def process_data(self, numbers):
+        if self.trigger_two and self.index == 1:
+            if self.rank == self.size - 1:
+                raise RuntimeError(self.msg(f"error during process_data!"))
+        subtotal = 0
+        for value in numbers:
+            time.sleep(0.05)
+            subtotal += value
+        print(self.msg(f"subtotal = {subtotal}"))
+        return subtotal
+
+    def write_result(self, subtotals):
+        time.sleep(0.5)
+        if self.trigger_three and self.index == 1:
+            raise RuntimeError(self.msg(f"error during write_result!"))
+        # sum subtotals and print result
+        total = sum(subtotals)
+        print(self.msg(f"total = {total}"))
+
 class NoMPIIOComm(object):
     READ_RANK = 0
     WRITE_RANK = 0

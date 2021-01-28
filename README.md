@@ -4,7 +4,13 @@ Examples of using mpi4py with exception handling and async-io patterns.
 
 ## Examples
 
-### Example 1a
+## Example 0
+
+Insert mpi-optional pattern description here.
+
+## Example 1
+
+### Part a
 
 `ex1-a-unsafe.py` is an example use case implemented with typical mpi-optional pattern. 
 
@@ -82,7 +88,7 @@ However, the mpi version gets stuck and needs a `CRTL-C` to abort:
 
 When the error is generated on rank 0 during the second iteration, it is caught on rank 0 and rank 0 moves onto the third iteration. rank 1 does not know about the error and is waiting at the broadcast step during the second iteration. When rank 0 moves on to third iteration, it generates the third dataset and broadcasts, which rank 1 picks up on its second iteration. rank 1 computes the subtotal using the data from the third iteration on its second iteration. rank 0, on its third iteration, eventually accepts the subtotal from rank 1 (computed on rank 1's second iteration using the data from the third iteration). rank 0 computes the combined total and has now reached the end of its process. Meanwhile, rank 1 moves on to its third iteration and gets stuck waiting at the broadcast step. A `CRTL-C` will come in handy at this point.
 
-### Example 1b
+### Part b
 
 One strategy to avoid getting stuck is to be more cautious before performing collective mpi communication. The example implementation in `ex2-safe.py` tries to catch and communicate errors when they occur in any single rank and so that they can be re-raised by all ranks.
 
@@ -104,7 +110,7 @@ The following shows what happens when we try `ex2-safe.py` with the `--trigger-o
 0: (2) total = 245
 ```
 
-### Example 1c
+### Part c
 
 The example implementation in `ex3-safe-again.py` uses a helper class to achieve to achieve the same effect. The helper classes in `safety.py` allow for a less noisy main program and makes the pattern easy to reuse and extend.
 
@@ -130,6 +136,9 @@ The `--trigger-two` argument can be used to induce and error while one of the ra
 
 Insert async-io example description here.
 
+### Example 3
+
+Insert combination of exception handling pattern and async-io pattern here.
 
 ## References
 

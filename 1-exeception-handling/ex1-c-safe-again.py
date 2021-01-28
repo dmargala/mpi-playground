@@ -2,7 +2,7 @@
 
 import argparse
 
-from safety import NoMPIComm, SafeMPIComm
+from helpers import NoMPIComm, SafeMPIComm
 
 def main():
 
