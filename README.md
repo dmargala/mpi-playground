@@ -2,11 +2,11 @@
 
 Examples of using mpi4py with exception handling and async-io patterns.
 
-## Example 0
+## 0. MPI Optional
 
 Insert mpi-optional pattern description here.
 
-## 1 Exception Handling
+## 1. Exception Handling
 
 ### Part a
 
