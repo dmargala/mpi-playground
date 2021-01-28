@@ -6,7 +6,7 @@ Examples of using mpi4py with exception handling and async-io patterns.
 
 Insert mpi-optional pattern description here.
 
-## Example 1
+## 1 Exception Handling
 
 ### Part a
 
@@ -130,11 +130,11 @@ The example implementation in `ex3-safe-again.py` uses a helper class to achieve
 
 The `--trigger-two` argument can be used to induce and error while one of the ranks is computing its subtotal before communicating back to the root rank. 
 
-### Example 2
+### 2 Async-IO
 
 Insert async-io example description here.
 
-### Example 3
+### 3 Combined (Exception Handling + Async-IO)
 
 Insert combination of exception handling pattern and async-io pattern here.
 
