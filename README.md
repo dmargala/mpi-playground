@@ -4,13 +4,13 @@ Examples of using mpi4py with exception handling and async-io patterns.
 
 ## 0. MPI Optional
 
-Insert mpi-optional pattern description here.
+The zeroth set of examples demonstrate a typical mpi-optional pattern for processing data as a set of independent tasks.
 
 ## 1. Exception Handling
 
 ### Part a
 
-`ex1-a-unsafe.py` is an example use case implemented with typical mpi-optional pattern. 
+First attempt at catching errors: `ex1-a-unsafe.py`
 
 To run the non-mpi version:
 
@@ -130,11 +130,11 @@ The example implementation in `ex3-safe-again.py` uses a helper class to achieve
 
 The `--trigger-two` argument can be used to induce and error while one of the ranks is computing its subtotal before communicating back to the root rank. 
 
-### 2 Async-IO
+### 2. Async-IO
 
 Insert async-io example description here.
 
-### 3 Combined (Exception Handling + Async-IO)
+### 3. Combined (Exception Handling + Async-IO)
 
 Insert combination of exception handling pattern and async-io pattern here.
 
