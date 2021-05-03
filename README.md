@@ -10,7 +10,7 @@ The zeroth set of examples demonstrate a typical mpi-optional pattern for proces
 
 ### Part a
 
-First attempt at catching errors: `ex1-a-unsafe.py`
+First attempt at catching errors: [`ex1-a-unsafe.py`](1-exception-handling/ex1-a-unsafe.py)
 
 To run the non-mpi version:
 
