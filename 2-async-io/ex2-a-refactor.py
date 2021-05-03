@@ -2,7 +2,8 @@
 
 import argparse
 
-from helpers import MyModule
+from helpers import Task
+
 
 def main():
 
@@ -16,6 +17,7 @@ def main():
     # optional mpi setup
     if args.mpi:
         from mpi4py import MPI
+
         comm = MPI.COMM_WORLD
         rank, size = comm.rank, comm.size
     else:
@@ -29,30 +31,16 @@ def main():
 
     # iterate over tasks
     for i in range(3):
-
-        mymod = MyModule(rank, size, i, args)
-
+        task = Task(rank, size, i, args)
         # generate data
         numbers = None
         if rank == 0:
-            numbers = mymod.load_data(10)
-
-        # broadcast data
-        if comm is not None:
-            numbers = comm.bcast(numbers, root=0)
-            
-        # each rank computes a subtotal
-        subtotal = mymod.process_data(numbers[rank::size])
-
-        # gather subtotals
-        if comm is not None:
-            subtotals = comm.gather(subtotal, root=0)
-        else:
-            subtotals = [subtotal, ]
-
+            numbers = task.load_data(10)
+        # divide work between ranks and gather result on root
+        subtotals = task.divide_and_conquer(numbers, comm)
         # sum subtotals and print result
         if rank == 0:
-            mymod.write_result(subtotals)
+            task.write_result(subtotals)
 
     if comm is not None:
         comm.barrier()

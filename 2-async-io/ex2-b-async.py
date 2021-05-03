@@ -2,7 +2,8 @@
 
 import argparse
 
-from helpers import MyModule
+from helpers import Task
+
 
 def main():
 
@@ -17,6 +18,7 @@ def main():
     # optional mpi setup
     if args.mpi:
         from mpi4py import MPI
+
         comm = MPI.COMM_WORLD
         rank, size = comm.rank, comm.size
         if args.async_io:
@@ -42,12 +44,12 @@ def main():
     # iterate over tasks
     for i in range(3):
 
-        mymod = MyModule(rank, size, i, args)
+        task = Task(rank, size, i, args)
 
         # generate data
         numbers = None
         if rank == READ_RANK:
-            numbers = mymod.load_data(10)
+            numbers = task.load_data(10)
 
         if args.async_io:
             if rank == READ_RANK:
@@ -55,22 +57,10 @@ def main():
             elif rank == WORK_ROOT:
                 numbers = comm.recv(source=READ_RANK)
 
+        # divide work between ranks and gather result on root
         subtotals = None
         if rank >= WORK_ROOT:
-
-            # broadcast data
-            if work_comm is not None:
-                numbers = work_comm.bcast(numbers, root=0)
-                numbers = numbers[work_comm.rank::work_comm.size]
-            
-            # each rank computes a subtotal
-            subtotal = mymod.process_data(numbers)
-
-            # gather subtotals
-            if work_comm is not None:
-                subtotals = work_comm.gather(subtotal, root=0)
-            else:
-                subtotals = [subtotal, ]
+            subtotals = task.divide_and_conquer(numbers, work_comm)
 
         if args.async_io:
             if rank == WORK_ROOT:
@@ -80,7 +70,7 @@ def main():
 
         # sum subtotals and print result
         if rank == WRITE_RANK:
-            mymod.write_result(subtotals)
+            task.write_result(subtotals)
 
     if comm is not None:
         comm.barrier()
