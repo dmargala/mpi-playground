@@ -28,7 +28,7 @@ class Task(object):
                 raise RuntimeError(self.msg(f"error during process_data!"))
         subtotal = 0
         for value in numbers:
-            time.sleep(0.05)
+            time.sleep(0.1)
             subtotal += value
         print(self.msg(f"subtotal = {subtotal}"))
         return subtotal

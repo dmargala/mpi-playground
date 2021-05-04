@@ -314,7 +314,7 @@ Use the `time` module to inject latency in our example program:
 0: (2) numbers = [20, 21, 22, 23, 24, 25, 26, 27, 28, 29]
 0: (2) subtotal = 245
 0: (2) total = 245
-        5.28 real         0.08 user         0.06 sys
+        6.13 real         0.03 user         0.01 sys
 ```
 
 ```
@@ -333,7 +333,7 @@ Use the `time` module to inject latency in our example program:
 0: (2) subtotal = 120
 1: (2) subtotal = 125
 0: (2) total = 245
-        5.04 real         3.32 user         0.16 sys
+        4.84 real         3.22 user         0.09 sys
 ```
 
 ### Part b
@@ -352,7 +352,7 @@ Parallel IO:
 0: (2) numbers = [20, 21, 22, 23, 24, 25, 26, 27, 28, 29]
 0: (2) subtotal = 245
 0: (2) total = 245
-        4.66 real         0.03 user         0.00 sys
+        6.12 real         0.03 user         0.01 sys
 ```
 
 ```
@@ -371,7 +371,7 @@ Parallel IO:
 0: (2) subtotal = 120
 1: (2) subtotal = 125
 0: (2) total = 245
-        4.09 real         3.22 user         0.09 sys
+        4.86 real         3.23 user         0.10 sys
 ```
 
 ```
@@ -392,7 +392,7 @@ Parallel IO:
 3: (2) subtotal = 125
 2: (2) subtotal = 120
 1: (2) total = 245
-        2.60 real         4.87 user         0.16 sys
+        2.87 real         4.47 user         0.16 sys
 ```
 
 ### Part c
@@ -411,7 +411,7 @@ Parallel IO with helpers:
 0: (2) numbers = [20, 21, 22, 23, 24, 25, 26, 27, 28, 29]
 0: (2) subtotal = 245
 0: (2) total = 245
-        4.63 real         0.03 user         0.00 sys
+        6.12 real         0.03 user         0.00 sys
 ```
 
 ```
@@ -430,28 +430,28 @@ Parallel IO with helpers:
 1: (2) subtotal = 125
 0: (2) subtotal = 120
 0: (2) total = 245
-        4.09 real         3.22 user         0.09 sys
+        4.84 real         3.22 user         0.09 sys
 ```
 
 ```
 > time mpiexec -n 4 python ex2-c-async-again.py --mpi --async-io
-1: Hello!
 0: Hello!
+1: Hello!
 2: Hello!
 3: Hello!
 0: (0) numbers = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+0: (1) numbers = [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
 2: (0) subtotal = 20
 3: (0) subtotal = 25
-0: (1) numbers = [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
 1: (0) total = 45
+0: (2) numbers = [20, 21, 22, 23, 24, 25, 26, 27, 28, 29]
 2: (1) subtotal = 70
 3: (1) subtotal = 75
-0: (2) numbers = [20, 21, 22, 23, 24, 25, 26, 27, 28, 29]
 1: (1) total = 145
-3: (2) subtotal = 125
 2: (2) subtotal = 120
+3: (2) subtotal = 125
 1: (2) total = 245
-        2.59 real         4.88 user         0.16 sys
+        2.85 real         4.44 user         0.16 sys
 ```
 
 ### 3. Combined (Exception Handling + Async-IO)
