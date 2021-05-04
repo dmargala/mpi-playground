@@ -303,7 +303,7 @@ Insert async-io example description here.
 Use the `time` module to inject latency in our example program:
 
 ```
-> python ex2-a-refactor.py
+> time python ex2-a-refactor.py
 0: Hello!
 0: (0) numbers = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 0: (0) subtotal = 45
@@ -314,24 +314,26 @@ Use the `time` module to inject latency in our example program:
 0: (2) numbers = [20, 21, 22, 23, 24, 25, 26, 27, 28, 29]
 0: (2) subtotal = 245
 0: (2) total = 245
+        5.28 real         0.08 user         0.06 sys
 ```
 
 ```
-> mpiexec -n 2 ex2-a-refactor.py --mpi
+> time mpiexec -n 2 ex2-a-refactor.py --mpi
 1: Hello!
 0: Hello!
 0: (0) numbers = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-0: (0) subtotal = 20
 1: (0) subtotal = 25
+0: (0) subtotal = 20
 0: (0) total = 45
 0: (1) numbers = [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
 1: (1) subtotal = 75
 0: (1) subtotal = 70
 0: (1) total = 145
 0: (2) numbers = [20, 21, 22, 23, 24, 25, 26, 27, 28, 29]
-1: (2) subtotal = 125
 0: (2) subtotal = 120
+1: (2) subtotal = 125
 0: (2) total = 245
+        5.04 real         3.32 user         0.16 sys
 ```
 
 ### Part b
@@ -339,7 +341,7 @@ Use the `time` module to inject latency in our example program:
 Parallel IO:
 
 ```
-> python ex2-b-async.py
+> time python ex2-b-async.py
 0: Hello!
 0: (0) numbers = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 0: (0) subtotal = 45
@@ -350,12 +352,13 @@ Parallel IO:
 0: (2) numbers = [20, 21, 22, 23, 24, 25, 26, 27, 28, 29]
 0: (2) subtotal = 245
 0: (2) total = 245
+        4.66 real         0.03 user         0.00 sys
 ```
 
 ```
-> mpiexec -n 2 python ex2-b-async.py --mpi
-0: Hello!
+> time mpiexec -n 2 python ex2-b-async.py --mpi
 1: Hello!
+0: Hello!
 0: (0) numbers = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 0: (0) subtotal = 20
 1: (0) subtotal = 25
@@ -365,29 +368,31 @@ Parallel IO:
 1: (1) subtotal = 75
 0: (1) total = 145
 0: (2) numbers = [20, 21, 22, 23, 24, 25, 26, 27, 28, 29]
-1: (2) subtotal = 125
 0: (2) subtotal = 120
+1: (2) subtotal = 125
 0: (2) total = 245
+        4.09 real         3.22 user         0.09 sys
 ```
 
 ```
-> mpiexec -n 4 python ex2-b-async.py --mpi --async-io
-1: Hello!
+> time mpiexec -n 4 python ex2-b-async.py --mpi --async-io
 0: Hello!
+1: Hello!
 2: Hello!
 3: Hello!
 0: (0) numbers = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-2: (0) subtotal = 20
 3: (0) subtotal = 25
+2: (0) subtotal = 20
 0: (1) numbers = [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
 1: (0) total = 45
 2: (1) subtotal = 70
 3: (1) subtotal = 75
 0: (2) numbers = [20, 21, 22, 23, 24, 25, 26, 27, 28, 29]
-2: (2) subtotal = 120
-3: (2) subtotal = 125
 1: (1) total = 145
+3: (2) subtotal = 125
+2: (2) subtotal = 120
 1: (2) total = 245
+        2.60 real         4.87 user         0.16 sys
 ```
 
 ### Part c
@@ -395,7 +400,7 @@ Parallel IO:
 Parallel IO with helpers:
 
 ```
-> python ex2-c-async-again.py
+> time python ex2-c-async-again.py
 0: Hello!
 0: (0) numbers = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 0: (0) subtotal = 45
@@ -406,12 +411,13 @@ Parallel IO with helpers:
 0: (2) numbers = [20, 21, 22, 23, 24, 25, 26, 27, 28, 29]
 0: (2) subtotal = 245
 0: (2) total = 245
+        4.63 real         0.03 user         0.00 sys
 ```
 
 ```
-> mpiexec -n 2 python ex2-c-async-again.py --mpi
-1: Hello!
+> time mpiexec -n 2 python ex2-c-async-again.py --mpi
 0: Hello!
+1: Hello!
 0: (0) numbers = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 0: (0) subtotal = 20
 1: (0) subtotal = 25
@@ -421,15 +427,16 @@ Parallel IO with helpers:
 1: (1) subtotal = 75
 0: (1) total = 145
 0: (2) numbers = [20, 21, 22, 23, 24, 25, 26, 27, 28, 29]
-0: (2) subtotal = 120
 1: (2) subtotal = 125
+0: (2) subtotal = 120
 0: (2) total = 245
+        4.09 real         3.22 user         0.09 sys
 ```
 
 ```
-> mpiexec -n 4 python ex2-c-async-again.py --mpi --async-io
-0: Hello!
+> time mpiexec -n 4 python ex2-c-async-again.py --mpi --async-io
 1: Hello!
+0: Hello!
 2: Hello!
 3: Hello!
 0: (0) numbers = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
@@ -440,10 +447,11 @@ Parallel IO with helpers:
 2: (1) subtotal = 70
 3: (1) subtotal = 75
 0: (2) numbers = [20, 21, 22, 23, 24, 25, 26, 27, 28, 29]
-2: (2) subtotal = 120
-3: (2) subtotal = 125
 1: (1) total = 145
+3: (2) subtotal = 125
+2: (2) subtotal = 120
 1: (2) total = 245
+        2.59 real         4.88 user         0.16 sys
 ```
 
 ### 3. Combined (Exception Handling + Async-IO)
