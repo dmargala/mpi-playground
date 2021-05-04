@@ -53,7 +53,7 @@ For each task, we can see the numbers generated and the resulting total.
 
 ### Part b
 
-An MPI version of the example program is implemented in [ex1-b-mpi.py](0-mpi-optional/ex0-b-mpi.py). 
+An MPI version of the example program is implemented in [ex0-b-mpi.py](0-mpi-optional/ex0-b-mpi.py). 
 The numberes for each task are generated on the root rank. 
 The numbers are then broadcast to other ranks which then compute subtotals. 
 The subtotals are then gathered on the root rank where the final total is computed. 
@@ -81,7 +81,7 @@ The output from each process is prepended with the process's rank index.
 
 ### Part c
 
-In [ex1-c-mpioptional.py](0-mpi-optional/ex0-c-mpioptional.py), we have an MPI-optional implementation of our example program. 
+In [ex0-c-mpioptional.py](0-mpi-optional/ex0-c-mpioptional.py), we have an MPI-optional implementation of our example program. 
 The implementation essentially treats the single non-mpi process as an mpi process with `rank == 0` of `size == 1`. 
 The program checks for `comm == None` to distinguish between mpi and non-mpi code paths. 
 The default execution does not use MPI. 
