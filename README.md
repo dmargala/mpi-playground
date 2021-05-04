@@ -8,7 +8,7 @@ The zeroth set of examples demonstrate a typical mpi-optional pattern for proces
 
 ### Part a
 
-Here is the toy problem from [ex0-a-nompi.py](0-mpi-optional/ex0-a-nompi.py):
+Here is the example program from [ex0-a-nompi.py](0-mpi-optional/ex0-a-nompi.py):
 
 ```python
 def main():
@@ -16,22 +16,23 @@ def main():
     print(f"Hello!")
     # iterate over tasks
     for i in range(3):
-        # generate data
+        # read: generate data
         numbers = list(range(i * 10, (i + 1) * 10))
         print(f"({i}) numbers = {numbers}")
-        # compute total
+        # process: compute total
         total = 0
         for value in numbers:
             total += value
-        # print result
+        # write: print result
         print(f"({i}) total = {total}")
 ```
 
-The toy problem has three tasks to process. Each task can be broken down into the following essential steps: 
+The example program processes three independent tasks. 
+Each task can be logically separated into the following essential steps: 
 
- 1. a read/load/generate/initialize step. In this case, we are generating data on the fly but typically this would involve reading some data from disk.
- 1. process/compute/analyze step. This is usually the main focus of an application. Here we are summing a list of numbers.
- 1. write/print/summarize/finalize step. Finally, the end result of the program is written to disk or a summary is printed to stdout which is what we do in this example.
+ 1. **Read** (or load, generate, initialize, etc.): In this case, we are generating data on the fly but typically this would involve reading some data from disk.
+ 1. **Process** (or compute, analyze, etc.): This is usually the main focus of an application. Here we are summing a list of numbers.
+ 1. **Write** (or print, summarize, finalize, etc): Finally, the end result of the program is written to disk or a summary is printed to stdout which is what we do in this example.
 
 Here is the result of running our first example:
 
@@ -46,9 +47,17 @@ Hello!
 (2) total = 245
 ```
 
+At the beginning of the program, the process says "Hello!" and proceeds to the set of tasks to process. 
+The messages printed to stdout for each task are prepended with the task index in parentheses. 
+For each task, we can see the numbers generated and the resulting total.
+
 ### Part b
 
-An MPI version of the toy program [ex1-b-mpi.py](0-mpi-optional/ex0-b-mpi.py): 
+An MPI version of the example program is implemented in [ex1-b-mpi.py](0-mpi-optional/ex0-b-mpi.py). 
+The numberes for each task are generated on the root rank. 
+The numbers are then broadcast to other ranks which then compute subtotals. 
+The subtotals are then gathered on the root rank where the final total is computed. 
+The following output shows the output running with two MPI ranks:
 
 ```
 > mpiexec -n 2 python ex0-b-mpi.py
@@ -68,9 +77,14 @@ An MPI version of the toy program [ex1-b-mpi.py](0-mpi-optional/ex0-b-mpi.py):
 1: (2) subtotal = 125
 ```
 
+The output from each process is prepended with the process's rank index.
+
 ### Part c
 
-In [ex1-c-mpioptional.py](0-mpi-optional/ex0-c-mpioptional.py), we have an MPI-optional implementation of our toy problem. The default execution does not use MPI. 
+In [ex1-c-mpioptional.py](0-mpi-optional/ex0-c-mpioptional.py), we have an MPI-optional implementation of our example program. 
+The implementation essentially treats the single non-mpi process as an mpi process with `rank == 0` of `size == 1`. 
+The program checks for `comm == None` to distinguish between mpi and non-mpi code paths. 
+The default execution does not use MPI. 
 
 Run without using MPI:
 
@@ -108,7 +122,50 @@ Run using MPI:
 1: (2) subtotal = 125
 ```
 
+### Part d
+
+In certain circumstances, we'd like to be able to continue processing tasks after encountering an error in a preceding task. 
+In [`ex0-d-trigger-errors.py`](0-mpi-optional/ex0-d-trigger-errors.py), we've injected errors into the example program that can be controlled with command line arguments. 
+Play around with the `--trigger-one`, `--trigger-two`, and `--trigger-three` options without MPI and then try while using MPI. 
+If you get stuck, try `CRTL-C` (press the `control`-key and the `c`-key at the same time).
+
+```
+> python ex0-d-trigger-errors.py --trigger-one
+0: Hello!
+0: (0) numbers = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+0: (0) subtotal = 45
+0: (0) total = 45
+Traceback (most recent call last):
+  File "ex0-d-trigger-errors.py", line 62, in <module>
+    main()
+  File "ex0-d-trigger-errors.py", line 32, in main
+    raise RuntimeError(f"{rank}: error generating data!")
+RuntimeError: 0: error generating data!
+```
+
+```
+> mpiexec -n 2 python ex0-d-trigger-errors.py --mpi --trigger-one
+0: Hello!
+1: Hello!
+0: (0) numbers = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+0: (0) subtotal = 20
+1: (0) subtotal = 25
+0: (0) total = 45
+Traceback (most recent call last):
+  File "ex0-d-trigger-errors.py", line 62, in <module>
+    main()
+  File "ex0-d-trigger-errors.py", line 32, in main
+    raise RuntimeError(f"{rank}: error generating data!")
+RuntimeError: 0: error generating data!
+^C
+```
+
 ## 1. Exception Handling
+
+When the MPI version of the example program encounters an error, the process that encounters the error exits but the other processes end up waiting at a collective communication event (bcast/gather/barrier/etc) indefinitely. 
+In a batch job on an HPC system such as NERSC, this is bad because the job will sit until the job timelimit runs out. 
+Sometimes we can ignore the error from a single task and we'd like our job to continue processing the remaining tasks. 
+This section will demonstrate how to make our example program more robust for these situations.
 
 ### Part a
 
@@ -130,8 +187,6 @@ To run the non-mpi version:
 0: (2) total = 245
 ```
 
-The implementation essentially treats the single non-mpi process as an mpi process with `rank == 0` of `size == 1`. The program checks for `comm == None` to distinguish between mpi and non-mpi code paths.
-
 To run the mpi-enabled version:
 
 ```
@@ -152,9 +207,8 @@ To run the mpi-enabled version:
 0: (2) total = 245
 ```
 
-In the mpi version, each rank computes an independent subtotal which are then combined into a single total by rank 0.
-
-The `--trigger-one` option forces an error on rank 0 while generating the data during the second iteration. In the non-mpi version, the error is caught and the process skips to the next iteration:
+The `--trigger-one` option forces an error on rank 0 while generating the data during the second iteration. 
+In the non-mpi version, the error is caught and the process skips to the next iteration:
 
 ```
 > python ex1-a-unsafe.py --trigger-one
@@ -186,13 +240,20 @@ However, the mpi version gets stuck and needs a `CRTL-C` to abort:
 ^C
 ```
 
-When the error is generated on rank 0 during the second iteration, it is caught on rank 0 and rank 0 moves onto the third iteration. rank 1 does not know about the error and is waiting at the broadcast step during the second iteration. When rank 0 moves on to third iteration, it generates the third dataset and broadcasts, which rank 1 picks up on its second iteration. rank 1 computes the subtotal using the data from the third iteration on its second iteration. rank 0, on its third iteration, eventually accepts the subtotal from rank 1 (computed on rank 1's second iteration using the data from the third iteration). rank 0 computes the combined total and has now reached the end of its process. Meanwhile, rank 1 moves on to its third iteration and gets stuck waiting at the broadcast step. A `CRTL-C` will come in handy at this point.
+When the error is generated on rank 0 during the second iteration, it is caught on rank 0 and rank 0 moves onto the third iteration. 
+rank 1 does not know about the error and is waiting at the broadcast step during the second iteration. 
+When rank 0 moves on to third iteration, it generates the third dataset and broadcasts, which rank 1 picks up on its second iteration. 
+rank 1 computes the subtotal using the data from the third iteration on its second iteration. 
+rank 0, on its third iteration, eventually accepts the subtotal from rank 1 (computed on rank 1's second iteration using the data from the third iteration). 
+rank 0 computes the combined total and has now reached the end of its process. 
+Meanwhile, rank 1 moves on to its third iteration and gets stuck waiting at the broadcast step. A `CRTL-C` will come in handy at this point.
 
 ### Part b
 
-One strategy to avoid getting stuck is to be more cautious before performing collective mpi communication. The example implementation in `ex2-safe.py` tries to catch and communicate errors when they occur in any single rank and so that they can be re-raised by all ranks.
+One strategy to avoid getting stuck is to be more cautious before performing collective mpi communication. 
+The example implementation in [`ex1-b-safe.py`](1-exception-handling/ex1-b-safe.py) attempts to catch and communicate errors when they occur in any single rank and so that they can be re-raised by all ranks.
 
-The following shows what happens when we try `ex2-safe.py` with the `--trigger-one` option.
+Now we can can see that we successfully skip the problem task and the program does not get stuck:
 
 ```
 > mpiexec -n 2 python ex1-b-safe.py --trigger-one --mpi
@@ -212,7 +273,8 @@ The following shows what happens when we try `ex2-safe.py` with the `--trigger-o
 
 ### Part c
 
-The example implementation in `ex3-safe-again.py` uses a helper class to achieve to achieve the same effect. The helper classes in `safety.py` allow for a less noisy main program and makes the pattern easy to reuse and extend.
+The example implementation in [`ex1-c-safe-again.py`](1-exception-handling/ex1-c-safe-again.py) uses a helper class to achieve to achieve the same effect. 
+The helper classes in [`ex1-helpers.py`](1-exception-handling/ex1-helpers.py) allow for a less noisy main program and makes the pattern easier to reuse and extend.
 
 ```
 > mpiexec -n 2 python ex1-c-safe-again.py --trigger-one --mpi
