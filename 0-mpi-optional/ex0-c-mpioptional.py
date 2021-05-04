@@ -2,51 +2,46 @@
 
 import argparse
 
-def main():
 
+def main():
     parser = argparse.ArgumentParser(allow_abbrev=False)
     parser.add_argument("--mpi", action="store_true", help="use mpi")
     args = parser.parse_args()
-
     # optional mpi setup
     if args.mpi:
         from mpi4py import MPI
+
         comm = MPI.COMM_WORLD
         rank, size = comm.rank, comm.size
     else:
         comm = None
         rank, size = 0, 1
-
     # say hello
     print(f"{rank}: Hello!")
     if comm is not None:
         comm.barrier()
-
     # iterate over tasks
     for i in range(3):
-
         # generate data
         numbers = None
         if rank == 0:
-            numbers = list(range(i*10, (i+1)*10))
+            numbers = list(range(i * 10, (i + 1) * 10))
             print(f"{rank}: ({i}) numbers = {numbers}")
-
         # broadcast data
         if comm is not None:
             numbers = comm.bcast(numbers, root=0)
-
         # each rank computes a subtotal
         subtotal = 0
         for value in numbers[rank::size]:
             subtotal += value
         print(f"{rank}: ({i}) subtotal = {subtotal}")
-
         # gather subtotals
         if comm is not None:
             subtotals = comm.gather(subtotal, root=0)
         else:
-            subtotals = [subtotal, ]
-
+            subtotals = [
+                subtotal,
+            ]
         # sum subtotals and print result
         if rank == 0:
             total = sum(subtotals)

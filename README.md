@@ -1,10 +1,112 @@
 # mpi-playground
 
-Examples of using mpi4py with exception handling and async-io patterns.
+Examples of using mpi4py with exception handling and parallel io patterns.
 
 ## 0. MPI Optional
 
 The zeroth set of examples demonstrate a typical mpi-optional pattern for processing data as a set of independent tasks.
+
+### Part a
+
+Here is the toy problem from [ex0-a-nompi.py](0-mpi-optional/ex0-a-nompi.py):
+
+```python
+def main():
+    # say hello
+    print(f"Hello!")
+    # iterate over tasks
+    for i in range(3):
+        # generate data
+        numbers = list(range(i * 10, (i + 1) * 10))
+        print(f"({i}) numbers = {numbers}")
+        # compute total
+        total = 0
+        for value in numbers:
+            total += value
+        # print result
+        print(f"({i}) total = {total}")
+```
+
+The toy problem has three tasks to process. Each task can be broken down into the following essential steps: 
+
+ 1. a read/load/generate/initialize step. In this case, we are generating data on the fly but typically this would involve reading some data from disk.
+ 1. process/compute/analyze step. This is usually the main focus of an application. Here we are summing a list of numbers.
+ 1. write/print/summarize/finalize step. Finally, the end result of the program is written to disk or a summary is printed to stdout which is what we do in this example.
+
+Here is the result of running our first example:
+
+```
+> python ex0-a-nompi.py
+Hello!
+(0) numbers = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+(0) total = 45
+(1) numbers = [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
+(1) total = 145
+(2) numbers = [20, 21, 22, 23, 24, 25, 26, 27, 28, 29]
+(2) total = 245
+```
+
+### Part b
+
+An MPI version of the toy program [ex1-b-mpi.py](0-mpi-optional/ex0-b-mpi.py): 
+
+```
+> mpiexec -n 2 python ex0-b-mpi.py
+0: Hello!
+1: Hello!
+0: (0) numbers = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+1: (0) subtotal = 25
+0: (0) subtotal = 20
+0: (0) total = 45
+0: (1) numbers = [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
+0: (1) subtotal = 70
+1: (1) subtotal = 75
+0: (1) total = 145
+0: (2) numbers = [20, 21, 22, 23, 24, 25, 26, 27, 28, 29]
+0: (2) subtotal = 120
+0: (2) total = 245
+1: (2) subtotal = 125
+```
+
+### Part c
+
+In [ex1-c-mpioptional.py](0-mpi-optional/ex0-c-mpioptional.py), we have an MPI-optional implementation of our toy problem. The default execution does not use MPI. 
+
+Run without using MPI:
+
+```
+> python ex0-c-mpioptional.py
+0: Hello!
+0: (0) numbers = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+0: (0) subtotal = 45
+0: (0) total = 45
+0: (1) numbers = [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
+0: (1) subtotal = 145
+0: (1) total = 145
+0: (2) numbers = [20, 21, 22, 23, 24, 25, 26, 27, 28, 29]
+0: (2) subtotal = 245
+0: (2) total = 245
+```
+
+Run using MPI:
+
+```
+> mpiexec -n 2 python ex0-c-mpioptional.py --mpi
+1: Hello!
+0: Hello!
+0: (0) numbers = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+0: (0) subtotal = 20
+1: (0) subtotal = 25
+0: (0) total = 45
+0: (1) numbers = [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
+0: (1) subtotal = 70
+1: (1) subtotal = 75
+0: (1) total = 145
+0: (2) numbers = [20, 21, 22, 23, 24, 25, 26, 27, 28, 29]
+0: (2) subtotal = 120
+0: (2) total = 245
+1: (2) subtotal = 125
+```
 
 ## 1. Exception Handling
 
