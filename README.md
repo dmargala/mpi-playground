@@ -274,7 +274,7 @@ Now we can can see that we successfully skip the problem task and the program do
 ### Part c
 
 The example implementation in [`ex1-c-safe-again.py`](1-exception-handling/ex1-c-safe-again.py) uses a helper class to achieve to achieve the same effect. 
-The helper classes in [`ex1-helpers.py`](1-exception-handling/ex1-helpers.py) allow for a less noisy main program and makes the pattern easier to reuse and extend.
+The helper classes in [`ex1helpers.py`](1-exception-handling/ex1helpers.py) allow for a less noisy main program and makes the pattern easier to reuse and extend.
 
 ```
 > mpiexec -n 2 python ex1-c-safe-again.py --trigger-one --mpi
