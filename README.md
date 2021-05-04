@@ -298,6 +298,154 @@ The `--trigger-two` argument can be used to induce and error while one of the ra
 
 Insert async-io example description here.
 
+### Part a
+
+Use the `time` module to inject latency in our example program:
+
+```
+> python ex2-a-refactor.py
+0: Hello!
+0: (0) numbers = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+0: (0) subtotal = 45
+0: (0) total = 45
+0: (1) numbers = [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
+0: (1) subtotal = 145
+0: (1) total = 145
+0: (2) numbers = [20, 21, 22, 23, 24, 25, 26, 27, 28, 29]
+0: (2) subtotal = 245
+0: (2) total = 245
+```
+
+```
+> mpiexec -n 2 ex2-a-refactor.py --mpi
+1: Hello!
+0: Hello!
+0: (0) numbers = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+0: (0) subtotal = 20
+1: (0) subtotal = 25
+0: (0) total = 45
+0: (1) numbers = [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
+1: (1) subtotal = 75
+0: (1) subtotal = 70
+0: (1) total = 145
+0: (2) numbers = [20, 21, 22, 23, 24, 25, 26, 27, 28, 29]
+1: (2) subtotal = 125
+0: (2) subtotal = 120
+0: (2) total = 245
+```
+
+### Part b
+
+Parallel IO:
+
+```
+> python ex2-b-async.py
+0: Hello!
+0: (0) numbers = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+0: (0) subtotal = 45
+0: (0) total = 45
+0: (1) numbers = [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
+0: (1) subtotal = 145
+0: (1) total = 145
+0: (2) numbers = [20, 21, 22, 23, 24, 25, 26, 27, 28, 29]
+0: (2) subtotal = 245
+0: (2) total = 245
+```
+
+```
+> mpiexec -n 2 python ex2-b-async.py --mpi
+0: Hello!
+1: Hello!
+0: (0) numbers = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+0: (0) subtotal = 20
+1: (0) subtotal = 25
+0: (0) total = 45
+0: (1) numbers = [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
+0: (1) subtotal = 70
+1: (1) subtotal = 75
+0: (1) total = 145
+0: (2) numbers = [20, 21, 22, 23, 24, 25, 26, 27, 28, 29]
+1: (2) subtotal = 125
+0: (2) subtotal = 120
+0: (2) total = 245
+```
+
+```
+> mpiexec -n 4 python ex2-b-async.py --mpi --async-io
+1: Hello!
+0: Hello!
+2: Hello!
+3: Hello!
+0: (0) numbers = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+2: (0) subtotal = 20
+3: (0) subtotal = 25
+0: (1) numbers = [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
+1: (0) total = 45
+2: (1) subtotal = 70
+3: (1) subtotal = 75
+0: (2) numbers = [20, 21, 22, 23, 24, 25, 26, 27, 28, 29]
+2: (2) subtotal = 120
+3: (2) subtotal = 125
+1: (1) total = 145
+1: (2) total = 245
+```
+
+### Part c
+
+Parallel IO with helpers:
+
+```
+> python ex2-c-async-again.py
+0: Hello!
+0: (0) numbers = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+0: (0) subtotal = 45
+0: (0) total = 45
+0: (1) numbers = [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
+0: (1) subtotal = 145
+0: (1) total = 145
+0: (2) numbers = [20, 21, 22, 23, 24, 25, 26, 27, 28, 29]
+0: (2) subtotal = 245
+0: (2) total = 245
+```
+
+```
+> mpiexec -n 2 python ex2-c-async-again.py --mpi
+1: Hello!
+0: Hello!
+0: (0) numbers = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+0: (0) subtotal = 20
+1: (0) subtotal = 25
+0: (0) total = 45
+0: (1) numbers = [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
+0: (1) subtotal = 70
+1: (1) subtotal = 75
+0: (1) total = 145
+0: (2) numbers = [20, 21, 22, 23, 24, 25, 26, 27, 28, 29]
+0: (2) subtotal = 120
+1: (2) subtotal = 125
+0: (2) total = 245
+```
+
+```
+> mpiexec -n 4 python ex2-c-async-again.py --mpi --async-io
+0: Hello!
+1: Hello!
+2: Hello!
+3: Hello!
+0: (0) numbers = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+2: (0) subtotal = 20
+3: (0) subtotal = 25
+0: (1) numbers = [10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
+1: (0) total = 45
+2: (1) subtotal = 70
+3: (1) subtotal = 75
+0: (2) numbers = [20, 21, 22, 23, 24, 25, 26, 27, 28, 29]
+2: (2) subtotal = 120
+3: (2) subtotal = 125
+1: (1) total = 145
+1: (2) total = 245
+```
+
 ### 3. Combined (Exception Handling + Async-IO)
 
 Insert combination of exception handling pattern and async-io pattern here.
